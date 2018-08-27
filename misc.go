@@ -4,11 +4,25 @@ import (
 	"bytes"
 	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
+	"hash"
 	"net/http"
+	"os"
 	"strings"
 )
+
+var (
+	encMethod = strings.ToUpper(os.Getenv("DIGEST_HASH"))
+)
+
+func init() {
+	if len(encMethod) == 0 {
+		encMethod = "MD5"
+	}
+}
 
 // RandomKey returns a random 16-byte base64 alphabet string
 func RandomKey() string {
@@ -25,7 +39,17 @@ func RandomKey() string {
 
 // H function for MD5 algorithm (returns a lower-case hex MD5 digest)
 func H(data string) string {
-	digest := md5.New()
+	var digest hash.Hash
+	switch encMethod {
+	case "SHA512":
+		sha512.New()
+	case "SHA384":
+		sha512.New384()
+	case "SHA256":
+		sha256.New()
+	default:
+		digest = md5.New()
+	}
 	digest.Write([]byte(data))
 	return fmt.Sprintf("%x", digest.Sum(nil))
 }
