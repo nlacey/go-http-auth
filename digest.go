@@ -102,8 +102,8 @@ func (da *DigestAuth) RequireAuth(w http.ResponseWriter, r *http.Request) {
 	da.mutex.RLock()
 	w.Header().Set(contentType, da.Headers.V().UnauthContentType)
 	w.Header().Set(da.Headers.V().Authenticate,
-		fmt.Sprintf(`Digest realm="%s", nonce="%s", opaque="%s", algorithm="MD5", qop="auth"`,
-			da.Realm, nonce, da.Opaque))
+		fmt.Sprintf(`Digest realm="%s", nonce="%s", opaque="%s", algorithm="%s", qop="auth"`,
+			da.Realm, nonce, da.Opaque, encMethod))
 	w.WriteHeader(da.Headers.V().UnauthCode)
 	w.Write([]byte(da.Headers.V().UnauthResponse))
 	da.mutex.RUnlock()
@@ -150,7 +150,7 @@ func (da *DigestAuth) CheckAuth(r *http.Request) (username string, authinfo *str
 	if _, ok := auth["algorithm"]; !ok {
 		auth["algorithm"] = "MD5"
 	}
-	if da.Opaque != auth["opaque"] || auth["algorithm"] != "MD5" || auth["qop"] != "auth" {
+	if da.Opaque != auth["opaque"] || auth["algorithm"] != encMethod || auth["qop"] != "auth" {
 		return "", nil
 	}
 
@@ -271,8 +271,8 @@ func (da *DigestAuth) NewContext(ctx context.Context, r *http.Request) context.C
 		nonce := RandomKey()
 		da.clients[nonce] = &digest_client{nc: 0, last_seen: time.Now().UnixNano()}
 		info.ResponseHeaders.Set(da.Headers.V().Authenticate,
-			fmt.Sprintf(`Digest realm="%s", nonce="%s", opaque="%s", algorithm="MD5", qop="auth"`,
-				da.Realm, nonce, da.Opaque))
+			fmt.Sprintf(`Digest realm="%s", nonce="%s", opaque="%s", algorithm="%s", qop="auth"`,
+				da.Realm, nonce, da.Opaque, encMethod))
 	}
 	da.mutex.Unlock()
 	return context.WithValue(ctx, infoKey, info)
